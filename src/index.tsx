@@ -95,14 +95,22 @@ const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
       icon={
         item.completed
           ? { source: Icon.Checkmark, tintColor: Color.Green }
-          : { source: Icon.XmarkCircle, tintColor: Color.Red }
+          : { source: Icon.Circle, tintColor: Color.Red }
       }
       actions={
         <ActionPanel>
           {item.completed ? (
-            <ActionPanel.Item title="Mark as uncompleted" onAction={() => changeStatus(false)} />
+            <ActionPanel.Item
+              title="Mark as uncompleted"
+              icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
+              onAction={() => changeStatus(false)}
+            />
           ) : (
-            <ActionPanel.Item title="Mark as completed" onAction={() => changeStatus(true)} />
+            <ActionPanel.Item
+              title="Mark as completed"
+              icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
+              onAction={() => changeStatus(true)}
+            />
           )}
         </ActionPanel>
       }
