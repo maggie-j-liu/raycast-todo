@@ -57,12 +57,12 @@ export default function TodoList() {
         </ActionPanel>
       }
       onSearchTextChange={(text) => setSearchText(text.trimEnd())}
-      searchBarPlaceholder="Type a todo item..."
+      searchBarPlaceholder="Type and hit enter to add an item to your list"
     >
       {todoSections.map((section, idx) => (
         <List.Section title={SECTIONS_DATA[idx].name} key={idx}>
           {section.map((item, i) => (
-            <SingleTodoItem item={item} key={i} section={idx} idx={i} pinned={idx === 0} />
+            <SingleTodoItem item={item} key={i} section={idx} idx={i} />
           ))}
         </List.Section>
       ))}

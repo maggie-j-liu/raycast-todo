@@ -3,22 +3,12 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { todoAtom, TodoItem } from "./atoms";
 import { useAtom } from "jotai";
-import { SECTIONS } from "./config";
+import { SECTIONS, SECTIONS_DATA } from "./config";
 import _ from "lodash";
 import { insertIntoSection, compare } from "./utils";
 import DeleteAllAction from "./delete_all";
 
-const SingleTodoItem = ({
-  item,
-  section,
-  idx,
-  pinned = false,
-}: {
-  item: TodoItem;
-  section: number;
-  idx: number;
-  pinned?: boolean;
-}) => {
+const SingleTodoItem = ({ item, section, idx }: { item: TodoItem; section: number; idx: number }) => {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
 
   const setClone = () => {
@@ -57,7 +47,7 @@ const SingleTodoItem = ({
           ? { source: Icon.Checkmark, tintColor: Color.Green }
           : { source: Icon.Circle, tintColor: Color.Red }
       }
-      accessoryIcon={pinned ? { source: Icon.Pin, tintColor: Color.Blue } : undefined}
+      accessoryIcon={SECTIONS_DATA[section].accessoryIcon}
       actions={
         <ActionPanel>
           {item.completed ? (
@@ -79,7 +69,7 @@ const SingleTodoItem = ({
             onAction={() => deleteTodo()}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
-          {pinned ? (
+          {section === SECTIONS.PINNED ? (
             <ActionPanel.Item
               title="Unpin Todo"
               icon={Icon.Pin}
