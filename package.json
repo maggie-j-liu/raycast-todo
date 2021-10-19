@@ -17,9 +17,11 @@
   "dependencies": {
     "@raycast/api": "^1.25.0",
     "dayjs": "^1.10.7",
-    "jotai": "^1.4.0"
+    "jotai": "^1.4.0",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.175",
     "@types/node": "~16.10.0",
     "@types/react": "^17.0.28",
     "@typescript-eslint/eslint-plugin": "^5.0.0",

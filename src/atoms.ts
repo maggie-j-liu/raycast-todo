@@ -1,6 +1,7 @@
 import { atom } from "jotai";
-import { TODO_FILE } from "./config";
-import fs from "fs/promises";
+import { DEFAULT_SECTIONS, TODO_FILE } from "./config";
+import fs from "fs";
+import _ from "lodash";
 
 export interface TodoItem {
   title: string;
@@ -8,19 +9,11 @@ export interface TodoItem {
   timeAdded: number;
 }
 
-export interface TodoSection {
-  name: string;
-  items: TodoItem[];
-}
-
-const todo = atom<TodoSection[]>([
-  { name: "pinned", items: [] },
-  { name: "other", items: [] },
-]);
+const todo = atom<TodoItem[][]>(_.cloneDeep(DEFAULT_SECTIONS));
 export const todoAtom = atom(
   (get) => get(todo),
-  async (_get, set, newTodo: TodoSection[]) => {
+  (_get, set, newTodo: TodoItem[][]) => {
     set(todo, newTodo);
-    await fs.writeFile(TODO_FILE, JSON.stringify(newTodo));
+    fs.writeFileSync(TODO_FILE, JSON.stringify(newTodo));
   }
 );

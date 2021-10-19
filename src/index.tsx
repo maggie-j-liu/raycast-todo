@@ -5,14 +5,31 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { todoAtom, TodoItem } from "./atoms";
 import { useAtom } from "jotai";
+import { DEFAULT_SECTIONS, SECTIONS, SECTIONS_DATA } from "./config";
+import _ from "lodash";
 
 const TODO_FILE = `${environment.supportPath}/todo.json`;
 
-const sortFunc = (a: TodoItem, b: TodoItem) => {
+const compare = (a: TodoItem, b: TodoItem) => {
   if (a.completed && !b.completed) return 1;
   if (b.completed && !a.completed) return -1;
   if (a.timeAdded < b.timeAdded) return -1;
   return 1;
+};
+
+const insertIntoSection = (currentSection: TodoItem[], newItem: TodoItem, cmp: Function) => {
+  let low = -1;
+  let high = currentSection.length - 1;
+  while (low < high) {
+    let mid = Math.floor((low + high + 1) / 2);
+    if (cmp(newItem, currentSection[mid]) < 0) {
+      high = mid - 1;
+    } else {
+      low = mid;
+    }
+  }
+  currentSection.splice(low + 1, 0, newItem);
+  return currentSection;
 };
 
 export default function TodoList() {
@@ -27,13 +44,7 @@ export default function TodoList() {
         setTodoSections(storedItems);
       } catch (error) {
         await fs.mkdir(environment.supportPath, { recursive: true });
-        await fs.writeFile(
-          TODO_FILE,
-          JSON.stringify([
-            { name: "pinned", items: [] },
-            { name: "other", items: [] },
-          ])
-        );
+        await fs.writeFile(TODO_FILE, JSON.stringify(DEFAULT_SECTIONS));
       } finally {
         setLoading(false);
       }
@@ -45,16 +56,19 @@ export default function TodoList() {
       await showToast(ToastStyle.Failure, "Empty todo", "Todo items cannot be empty.");
       return;
     }
-    todoSections[1].items = [
-      {
-        title: searchText,
-        completed: false,
-        timeAdded: Date.now(),
-      },
-      ...todoSections[1].items,
+    todoSections[SECTIONS.OTHER] = [
+      ...insertIntoSection(
+        todoSections[SECTIONS.OTHER],
+        {
+          title: searchText,
+          completed: false,
+          timeAdded: Date.now(),
+        },
+        compare
+      ),
     ];
     await clearSearchBar();
-    await setTodoSections([...todoSections]);
+    setTodoSections(_.cloneDeep(todoSections));
   };
   return (
     <List
@@ -69,8 +83,8 @@ export default function TodoList() {
       searchBarPlaceholder="Type a todo item..."
     >
       {todoSections.map((section, idx) => (
-        <List.Section title={section.name} key={idx}>
-          {section.items.map((item, i) => (
+        <List.Section title={SECTIONS_DATA[idx].name} key={idx}>
+          {section.map((item, i) => (
             <TodoItem item={item} key={i} section={idx} idx={i} pinned={idx === 0} />
           ))}
         </List.Section>
@@ -92,20 +106,26 @@ const TodoItem = ({
 }) => {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
 
+  const setClone = () => {
+    setTodoSections(_.cloneDeep(todoSections));
+  };
+
   const toggleCompleted = () => {
-    todoSections[section].items[idx].completed = !todoSections[section].items[idx].completed;
-    setTodoSections([...todoSections]);
+    todoSections[section][idx].completed = !todoSections[section][idx].completed;
+    todoSections[section].splice(idx, 1);
+    todoSections[section] = [...insertIntoSection(todoSections[section], item, compare)];
+    setClone();
   };
 
   const moveToSection = (newSection: number) => {
-    todoSections[newSection].items = [...todoSections[newSection].items, item];
-    todoSections[section].items.splice(idx, 1);
-    setTodoSections([...todoSections]);
+    todoSections[newSection] = [...insertIntoSection(todoSections[newSection], item, compare)];
+    todoSections[section].splice(idx, 1);
+    setClone();
   };
 
   const deleteTodo = () => {
-    todoSections[section].items.splice(idx, 1);
-    setTodoSections([...todoSections]);
+    todoSections[section].splice(idx, 1);
+    setClone();
   };
 
   dayjs.extend(customParseFormat);
@@ -148,14 +168,14 @@ const TodoItem = ({
             <ActionPanel.Item
               title="Unpin Todo"
               icon={Icon.Pin}
-              onAction={() => moveToSection(1)}
+              onAction={() => moveToSection(SECTIONS.OTHER)}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           ) : (
             <ActionPanel.Item
               title="Pin Todo"
               icon={Icon.Pin}
-              onAction={() => moveToSection(0)}
+              onAction={() => moveToSection(SECTIONS.PINNED)}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           )}
@@ -171,12 +191,7 @@ const DeleteAllAction = () => {
   return (
     <ActionPanel.Item
       title="Delete All"
-      onAction={() =>
-        setTodoItems([
-          { name: "pinned", items: [] },
-          { name: "other", items: [] },
-        ])
-      }
+      onAction={() => setTodoItems(_.cloneDeep(DEFAULT_SECTIONS))}
       shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
     />
   );
