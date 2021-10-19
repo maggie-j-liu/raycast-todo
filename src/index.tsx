@@ -1,5 +1,5 @@
 import { ActionPanel, clearSearchBar, Color, environment, Icon, List, showToast, ToastStyle } from "@raycast/api";
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import fs from "fs/promises";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -9,8 +9,6 @@ import { useAtom } from "jotai";
 const TODO_FILE = `${environment.supportPath}/todo.json`;
 
 const sortFunc = (a: TodoItem, b: TodoItem) => {
-  if (a.pinned && !b.pinned) return -1;
-  if (b.pinned && !a.pinned) return 1;
   if (a.completed && !b.completed) return 1;
   if (b.completed && !a.completed) return -1;
   if (a.timeAdded < b.timeAdded) return -1;
@@ -18,7 +16,7 @@ const sortFunc = (a: TodoItem, b: TodoItem) => {
 };
 
 export default function TodoList() {
-  const [todoItems, setTodoItems] = useAtom(todoAtom);
+  const [todoSections, setTodoSections] = useAtom(todoAtom);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -26,10 +24,16 @@ export default function TodoList() {
       try {
         const storedItemsBuffer = await fs.readFile(TODO_FILE);
         const storedItems = JSON.parse(storedItemsBuffer.toString());
-        setTodoItems(storedItems);
+        setTodoSections(storedItems);
       } catch (error) {
         await fs.mkdir(environment.supportPath, { recursive: true });
-        await fs.writeFile(TODO_FILE, JSON.stringify([]));
+        await fs.writeFile(
+          TODO_FILE,
+          JSON.stringify([
+            { name: "pinned", items: [] },
+            { name: "other", items: [] },
+          ])
+        );
       } finally {
         setLoading(false);
       }
@@ -41,17 +45,16 @@ export default function TodoList() {
       await showToast(ToastStyle.Failure, "Empty todo", "Todo items cannot be empty.");
       return;
     }
-    const newTodos = [
+    todoSections[1].items = [
       {
         title: searchText,
         completed: false,
         timeAdded: Date.now(),
-        pinned: false,
       },
-      ...todoItems,
-    ].sort(sortFunc);
+      ...todoSections[1].items,
+    ];
     await clearSearchBar();
-    await setTodoItems(newTodos);
+    await setTodoSections([...todoSections]);
   };
   return (
     <List
@@ -65,26 +68,46 @@ export default function TodoList() {
       onSearchTextChange={(text) => setSearchText(text.trimEnd())}
       searchBarPlaceholder="Type a todo item..."
     >
-      {todoItems.map((item, idx) => (
-        <TodoItem item={item} key={idx} idx={idx} />
+      {todoSections.map((section, idx) => (
+        <List.Section title={section.name} key={idx}>
+          {section.items.map((item, i) => (
+            <TodoItem item={item} key={i} section={idx} idx={i} pinned={idx === 0} />
+          ))}
+        </List.Section>
       ))}
     </List>
   );
 }
 
-const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
-  const [todoItems, setTodoItems] = useAtom(todoAtom);
-  const changeProperty = (property: "completed" | "pinned", newStatus: boolean) => {
-    const newTodo = [...todoItems];
-    newTodo[idx][property] = newStatus;
-    const sortedTodos = [...newTodo].sort(sortFunc);
-    setTodoItems(sortedTodos);
+const TodoItem = ({
+  item,
+  section,
+  idx,
+  pinned = false,
+}: {
+  item: TodoItem;
+  section: number;
+  idx: number;
+  pinned?: boolean;
+}) => {
+  const [todoSections, setTodoSections] = useAtom(todoAtom);
+
+  const toggleCompleted = () => {
+    todoSections[section].items[idx].completed = !todoSections[section].items[idx].completed;
+    setTodoSections([...todoSections]);
   };
+
+  const moveToSection = (newSection: number) => {
+    todoSections[newSection].items = [...todoSections[newSection].items, item];
+    todoSections[section].items.splice(idx, 1);
+    setTodoSections([...todoSections]);
+  };
+
   const deleteTodo = () => {
-    const newTodo = [...todoItems];
-    newTodo.splice(idx, 1);
-    setTodoItems(newTodo);
+    todoSections[section].items.splice(idx, 1);
+    setTodoSections([...todoSections]);
   };
+
   dayjs.extend(customParseFormat);
   const datePart = dayjs(item.timeAdded).format("MMM D");
   const nowDatePart = dayjs(Date.now()).format("MMM D");
@@ -99,20 +122,20 @@ const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
           ? { source: Icon.Checkmark, tintColor: Color.Green }
           : { source: Icon.Circle, tintColor: Color.Red }
       }
-      accessoryIcon={item.pinned ? { source: Icon.Pin, tintColor: Color.Blue } : undefined}
+      accessoryIcon={pinned ? { source: Icon.Pin, tintColor: Color.Blue } : undefined}
       actions={
         <ActionPanel>
           {item.completed ? (
             <ActionPanel.Item
               title="Mark as Uncompleted"
               icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
-              onAction={() => changeProperty("completed", false)}
+              onAction={() => toggleCompleted()}
             />
           ) : (
             <ActionPanel.Item
               title="Mark as Completed"
               icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
-              onAction={() => changeProperty("completed", true)}
+              onAction={() => toggleCompleted()}
             />
           )}
           <ActionPanel.Item
@@ -121,18 +144,18 @@ const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
             onAction={() => deleteTodo()}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
-          {item.pinned ? (
+          {pinned ? (
             <ActionPanel.Item
               title="Unpin Todo"
               icon={Icon.Pin}
-              onAction={() => changeProperty("pinned", false)}
+              onAction={() => moveToSection(1)}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           ) : (
             <ActionPanel.Item
               title="Pin Todo"
               icon={Icon.Pin}
-              onAction={() => changeProperty("pinned", true)}
+              onAction={() => moveToSection(0)}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           )}
@@ -148,7 +171,12 @@ const DeleteAllAction = () => {
   return (
     <ActionPanel.Item
       title="Delete All"
-      onAction={() => setTodoItems([])}
+      onAction={() =>
+        setTodoItems([
+          { name: "pinned", items: [] },
+          { name: "other", items: [] },
+        ])
+      }
       shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
     />
   );

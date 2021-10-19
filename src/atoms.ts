@@ -6,13 +6,20 @@ export interface TodoItem {
   title: string;
   completed: boolean;
   timeAdded: number;
-  pinned: boolean;
 }
 
-const todo = atom<TodoItem[]>([]);
+export interface TodoSection {
+  name: string;
+  items: TodoItem[];
+}
+
+const todo = atom<TodoSection[]>([
+  { name: "pinned", items: [] },
+  { name: "other", items: [] },
+]);
 export const todoAtom = atom(
   (get) => get(todo),
-  async (get, set, newTodo: TodoItem[]) => {
+  async (_get, set, newTodo: TodoSection[]) => {
     set(todo, newTodo);
     await fs.writeFile(TODO_FILE, JSON.stringify(newTodo));
   }
