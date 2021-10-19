@@ -3,20 +3,10 @@ import { createContext, useContext, useEffect, useState } from "react";
 import fs from "fs/promises";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { todoAtom, TodoItem } from "./atoms";
+import { useAtom } from "jotai";
 
 const TODO_FILE = `${environment.supportPath}/todo.json`;
-
-interface TodoItem {
-  title: string;
-  completed: boolean;
-  timeAdded: number;
-  pinned: boolean;
-}
-
-const TodoContext = createContext<{ todoItems: TodoItem[]; setTodoItems: (newTodo: TodoItem[]) => Promise<void> }>({
-  todoItems: [],
-  setTodoItems: async () => {},
-});
 
 const sortFunc = (a: TodoItem, b: TodoItem) => {
   if (a.pinned && !b.pinned) return -1;
@@ -28,7 +18,7 @@ const sortFunc = (a: TodoItem, b: TodoItem) => {
 };
 
 export default function TodoList() {
-  const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
+  const [todoItems, setTodoItems] = useAtom(todoAtom);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -46,11 +36,6 @@ export default function TodoList() {
     })();
   }, []);
 
-  const stickySetTodo = async (newTodo: TodoItem[]) => {
-    setTodoItems(newTodo);
-    await fs.writeFile(TODO_FILE, JSON.stringify(newTodo));
-  };
-
   const addTodo = async () => {
     if (searchText.length === 0) {
       await showToast(ToastStyle.Failure, "Empty todo", "Todo items cannot be empty.");
@@ -66,35 +51,29 @@ export default function TodoList() {
       ...todoItems,
     ].sort(sortFunc);
     await clearSearchBar();
-    await stickySetTodo(newTodos);
+    await setTodoItems(newTodos);
   };
   return (
-    <TodoContext.Provider value={{ todoItems, setTodoItems: stickySetTodo }}>
-      <List
-        isLoading={loading}
-        actions={
-          <ActionPanel>
-            <ActionPanel.Item title="Create Todo" onAction={() => addTodo()} />
-            <ActionPanel.Item
-              title="Delete All"
-              onAction={() => stickySetTodo([])}
-              shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
-            />
-          </ActionPanel>
-        }
-        onSearchTextChange={(text) => setSearchText(text.trimEnd())}
-        searchBarPlaceholder="Type a todo item..."
-      >
-        {todoItems.map((item, idx) => (
-          <TodoItem item={item} key={idx} idx={idx} />
-        ))}
-      </List>
-    </TodoContext.Provider>
+    <List
+      isLoading={loading}
+      actions={
+        <ActionPanel>
+          <ActionPanel.Item title="Create Todo" onAction={() => addTodo()} />
+          <DeleteAllAction />
+        </ActionPanel>
+      }
+      onSearchTextChange={(text) => setSearchText(text.trimEnd())}
+      searchBarPlaceholder="Type a todo item..."
+    >
+      {todoItems.map((item, idx) => (
+        <TodoItem item={item} key={idx} idx={idx} />
+      ))}
+    </List>
   );
 }
 
 const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
-  const { todoItems, setTodoItems } = useContext(TodoContext);
+  const [todoItems, setTodoItems] = useAtom(todoAtom);
   const changeProperty = (property: "completed" | "pinned", newStatus: boolean) => {
     const newTodo = [...todoItems];
     newTodo[idx][property] = newStatus;
@@ -157,13 +136,20 @@ const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           )}
-          <ActionPanel.Item
-            title="Delete All"
-            onAction={() => setTodoItems([])}
-            shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
-          />
+          <DeleteAllAction />
         </ActionPanel>
       }
+    />
+  );
+};
+
+const DeleteAllAction = () => {
+  const [, setTodoItems] = useAtom(todoAtom);
+  return (
+    <ActionPanel.Item
+      title="Delete All"
+      onAction={() => setTodoItems([])}
+      shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
     />
   );
 };
