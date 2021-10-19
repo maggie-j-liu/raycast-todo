@@ -83,6 +83,11 @@ const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
     });
     setTodoItems(sortedTodos);
   };
+  const deleteTodo = () => {
+    const newTodo = [...todoItems];
+    newTodo.splice(idx, 1);
+    setTodoItems(newTodo);
+  };
   dayjs.extend(customParseFormat);
   const datePart = dayjs(item.timeAdded).format("MMM D");
   const nowDatePart = dayjs(Date.now()).format("MMM D");
@@ -101,17 +106,23 @@ const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
         <ActionPanel>
           {item.completed ? (
             <ActionPanel.Item
-              title="Mark as uncompleted"
+              title="Mark as Uncompleted"
               icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
               onAction={() => changeStatus(false)}
             />
           ) : (
             <ActionPanel.Item
-              title="Mark as completed"
+              title="Mark as Completed"
               icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
               onAction={() => changeStatus(true)}
             />
           )}
+          <ActionPanel.Item
+            title="Delete Todo"
+            icon={Icon.Trash}
+            onAction={() => deleteTodo()}
+            shortcut={{ modifiers: ["ctrl"], key: "x" }}
+          />
         </ActionPanel>
       }
     />
