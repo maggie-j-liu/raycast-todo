@@ -10,6 +10,7 @@ interface TodoItem {
   title: string;
   completed: boolean;
   timeAdded: number;
+  pinned: boolean;
 }
 
 const TodoContext = createContext<{ todoItems: TodoItem[]; setTodoItems: (newTodo: TodoItem[]) => Promise<void> }>({
@@ -18,6 +19,8 @@ const TodoContext = createContext<{ todoItems: TodoItem[]; setTodoItems: (newTod
 });
 
 const sortFunc = (a: TodoItem, b: TodoItem) => {
+  if (a.pinned && !b.pinned) return -1;
+  if (b.pinned && !a.pinned) return 1;
   if (a.completed && !b.completed) return 1;
   if (b.completed && !a.completed) return -1;
   if (a.timeAdded < b.timeAdded) return -1;
@@ -53,7 +56,15 @@ export default function TodoList() {
       await showToast(ToastStyle.Failure, "Empty todo", "Todo items cannot be empty.");
       return;
     }
-    const newTodos = [{ title: searchText, completed: false, timeAdded: Date.now() }, ...todoItems].sort(sortFunc);
+    const newTodos = [
+      {
+        title: searchText,
+        completed: false,
+        timeAdded: Date.now(),
+        pinned: false,
+      },
+      ...todoItems,
+    ].sort(sortFunc);
     await clearSearchBar();
     await stickySetTodo(newTodos);
   };
@@ -63,7 +74,12 @@ export default function TodoList() {
         isLoading={loading}
         actions={
           <ActionPanel>
-            <ActionPanel.Item title="Create todo" onAction={() => addTodo()} />
+            <ActionPanel.Item title="Create Todo" onAction={() => addTodo()} />
+            <ActionPanel.Item
+              title="Delete All"
+              onAction={() => stickySetTodo([])}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
+            />
           </ActionPanel>
         }
         onSearchTextChange={(text) => setSearchText(text.trimEnd())}
@@ -79,9 +95,9 @@ export default function TodoList() {
 
 const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
   const { todoItems, setTodoItems } = useContext(TodoContext);
-  const changeStatus = (newStatus: boolean) => {
+  const changeProperty = (property: "completed" | "pinned", newStatus: boolean) => {
     const newTodo = [...todoItems];
-    newTodo[idx].completed = newStatus;
+    newTodo[idx][property] = newStatus;
     const sortedTodos = [...newTodo].sort(sortFunc);
     setTodoItems(sortedTodos);
   };
@@ -104,26 +120,47 @@ const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
           ? { source: Icon.Checkmark, tintColor: Color.Green }
           : { source: Icon.Circle, tintColor: Color.Red }
       }
+      accessoryIcon={item.pinned ? { source: Icon.Pin, tintColor: Color.Blue } : undefined}
       actions={
         <ActionPanel>
           {item.completed ? (
             <ActionPanel.Item
               title="Mark as Uncompleted"
               icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
-              onAction={() => changeStatus(false)}
+              onAction={() => changeProperty("completed", false)}
             />
           ) : (
             <ActionPanel.Item
               title="Mark as Completed"
               icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
-              onAction={() => changeStatus(true)}
+              onAction={() => changeProperty("completed", true)}
             />
           )}
           <ActionPanel.Item
             title="Delete Todo"
             icon={Icon.Trash}
             onAction={() => deleteTodo()}
-            shortcut={{ modifiers: ["ctrl"], key: "x" }}
+            shortcut={{ modifiers: ["cmd"], key: "d" }}
+          />
+          {item.pinned ? (
+            <ActionPanel.Item
+              title="Unpin Todo"
+              icon={Icon.Pin}
+              onAction={() => changeProperty("pinned", false)}
+              shortcut={{ modifiers: ["cmd"], key: "p" }}
+            />
+          ) : (
+            <ActionPanel.Item
+              title="Pin Todo"
+              icon={Icon.Pin}
+              onAction={() => changeProperty("pinned", true)}
+              shortcut={{ modifiers: ["cmd"], key: "p" }}
+            />
+          )}
+          <ActionPanel.Item
+            title="Delete All"
+            onAction={() => setTodoItems([])}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
           />
         </ActionPanel>
       }
