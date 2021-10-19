@@ -17,6 +17,13 @@ const TodoContext = createContext<{ todoItems: TodoItem[]; setTodoItems: (newTod
   setTodoItems: async () => {},
 });
 
+const sortFunc = (a: TodoItem, b: TodoItem) => {
+  if (a.completed && !b.completed) return 1;
+  if (b.completed && !a.completed) return -1;
+  if (a.timeAdded < b.timeAdded) return -1;
+  return 1;
+};
+
 export default function TodoList() {
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -46,7 +53,7 @@ export default function TodoList() {
       await showToast(ToastStyle.Failure, "Empty todo", "Todo items cannot be empty.");
       return;
     }
-    const newTodos = [{ title: searchText, completed: false, timeAdded: Date.now() }, ...todoItems];
+    const newTodos = [{ title: searchText, completed: false, timeAdded: Date.now() }, ...todoItems].sort(sortFunc);
     await clearSearchBar();
     await stickySetTodo(newTodos);
   };
@@ -75,12 +82,7 @@ const TodoItem = ({ item, idx }: { item: TodoItem; idx: number }) => {
   const changeStatus = (newStatus: boolean) => {
     const newTodo = [...todoItems];
     newTodo[idx].completed = newStatus;
-    const sortedTodos = [...newTodo].sort((a: TodoItem, b: TodoItem) => {
-      if (a.completed && !b.completed) return 1;
-      if (b.completed && !a.completed) return -1;
-      if (a.timeAdded > b.timeAdded) return -1;
-      return 1;
-    });
+    const sortedTodos = [...newTodo].sort(sortFunc);
     setTodoItems(sortedTodos);
   };
   const deleteTodo = () => {
