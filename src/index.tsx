@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import fs from "fs/promises";
 import { todoAtom } from "./atoms";
 import { useAtom } from "jotai";
-import { DEFAULT_SECTIONS, SECTIONS, SECTIONS_DATA, TODO_FILE } from "./config";
+import { DEFAULT_SECTIONS, SECTIONS_DATA, TODO_FILE } from "./config";
 import _ from "lodash";
 import { insertIntoSection, compare } from "./utils";
 import SingleTodoItem from "./todo_item";
 import DeleteAllAction from "./delete_all";
+import TodoSection from "./todo_section";
 
 export default function TodoList() {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
@@ -18,10 +19,20 @@ export default function TodoList() {
       try {
         const storedItemsBuffer = await fs.readFile(TODO_FILE);
         const storedItems = JSON.parse(storedItemsBuffer.toString());
-        setTodoSections(storedItems);
+        // from v1 where items were stored in an array
+        if (Array.isArray(storedItems)) {
+          const convertedStoredItems = {
+            pinned: storedItems[0],
+            todo: storedItems[1],
+            completed: [],
+          };
+          setTodoSections(convertedStoredItems);
+        } else {
+          setTodoSections(storedItems);
+        }
       } catch (error) {
         await fs.mkdir(environment.supportPath, { recursive: true });
-        await fs.writeFile(TODO_FILE, JSON.stringify(DEFAULT_SECTIONS));
+        setTodoSections(DEFAULT_SECTIONS);
       } finally {
         setLoading(false);
       }
@@ -33,9 +44,9 @@ export default function TodoList() {
       await showToast(ToastStyle.Failure, "Empty todo", "Todo items cannot be empty.");
       return;
     }
-    todoSections[SECTIONS.OTHER] = [
+    todoSections.todo = [
       ...insertIntoSection(
-        todoSections[SECTIONS.OTHER],
+        todoSections.todo,
         {
           title: searchText,
           completed: false,
@@ -59,13 +70,8 @@ export default function TodoList() {
       onSearchTextChange={(text) => setSearchText(text.trimEnd())}
       searchBarPlaceholder="Type and hit enter to add an item to your list"
     >
-      {todoSections.map((section, idx) => (
-        <List.Section title={SECTIONS_DATA[idx].name} key={idx}>
-          {section.map((item, i) => (
-            <SingleTodoItem item={item} key={i} section={idx} idx={i} />
-          ))}
-        </List.Section>
-      ))}
+      <TodoSection sectionKey={"pinned"} />
+      <TodoSection sectionKey={"todo"} />
     </List>
   );
 }

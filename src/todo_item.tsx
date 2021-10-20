@@ -1,14 +1,14 @@
 import { ActionPanel, Color, Icon, List } from "@raycast/api";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import { todoAtom, TodoItem } from "./atoms";
+import { todoAtom, TodoItem, TodoSections } from "./atoms";
 import { useAtom } from "jotai";
-import { SECTIONS, SECTIONS_DATA } from "./config";
+import { SECTIONS_DATA } from "./config";
 import _ from "lodash";
 import { insertIntoSection, compare } from "./utils";
 import DeleteAllAction from "./delete_all";
 
-const SingleTodoItem = ({ item, section, idx }: { item: TodoItem; section: number; idx: number }) => {
+const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number; sectionKey: keyof TodoSections }) => {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
 
   const setClone = () => {
@@ -16,20 +16,20 @@ const SingleTodoItem = ({ item, section, idx }: { item: TodoItem; section: numbe
   };
 
   const toggleCompleted = () => {
-    todoSections[section][idx].completed = !todoSections[section][idx].completed;
-    todoSections[section].splice(idx, 1);
-    todoSections[section] = [...insertIntoSection(todoSections[section], item, compare)];
+    todoSections[sectionKey][idx].completed = !todoSections[sectionKey][idx].completed;
+    todoSections[sectionKey].splice(idx, 1);
+    todoSections[sectionKey] = [...insertIntoSection(todoSections[sectionKey], item, compare)];
     setClone();
   };
 
-  const moveToSection = (newSection: number) => {
+  const moveToSection = (newSection: keyof TodoSections) => {
     todoSections[newSection] = [...insertIntoSection(todoSections[newSection], item, compare)];
-    todoSections[section].splice(idx, 1);
+    todoSections[sectionKey].splice(idx, 1);
     setClone();
   };
 
   const deleteTodo = () => {
-    todoSections[section].splice(idx, 1);
+    todoSections[sectionKey].splice(idx, 1);
     setClone();
   };
 
@@ -47,7 +47,7 @@ const SingleTodoItem = ({ item, section, idx }: { item: TodoItem; section: numbe
           ? { source: Icon.Checkmark, tintColor: Color.Green }
           : { source: Icon.Circle, tintColor: Color.Red }
       }
-      accessoryIcon={SECTIONS_DATA[section].accessoryIcon}
+      accessoryIcon={SECTIONS_DATA[sectionKey].accessoryIcon}
       actions={
         <ActionPanel>
           {item.completed ? (
@@ -69,18 +69,18 @@ const SingleTodoItem = ({ item, section, idx }: { item: TodoItem; section: numbe
             onAction={() => deleteTodo()}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
-          {section === SECTIONS.PINNED ? (
+          {sectionKey === "pinned" ? (
             <ActionPanel.Item
               title="Unpin Todo"
               icon={Icon.Pin}
-              onAction={() => moveToSection(SECTIONS.OTHER)}
+              onAction={() => moveToSection("todo")}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           ) : (
             <ActionPanel.Item
               title="Pin Todo"
               icon={Icon.Pin}
-              onAction={() => moveToSection(SECTIONS.PINNED)}
+              onAction={() => moveToSection("pinned")}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           )}
