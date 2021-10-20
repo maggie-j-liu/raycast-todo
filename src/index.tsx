@@ -1,12 +1,11 @@
 import { ActionPanel, clearSearchBar, environment, List, showToast, ToastStyle } from "@raycast/api";
 import { useEffect, useState } from "react";
 import fs from "fs/promises";
-import { todoAtom } from "./atoms";
+import { todoAtom, TodoSections } from "./atoms";
 import { useAtom } from "jotai";
-import { DEFAULT_SECTIONS, SECTIONS_DATA, TODO_FILE } from "./config";
+import { DEFAULT_SECTIONS, TODO_FILE } from "./config";
 import _ from "lodash";
 import { insertIntoSection, compare } from "./utils";
-import SingleTodoItem from "./todo_item";
 import DeleteAllAction from "./delete_all";
 import TodoSection from "./todo_section";
 
@@ -21,10 +20,20 @@ export default function TodoList() {
         const storedItems = JSON.parse(storedItemsBuffer.toString());
         // from v1 where items were stored in an array
         if (Array.isArray(storedItems)) {
+          const storedPinned = storedItems[0];
+          const storedTodo = [];
+          const storedCompleted = [];
+          for (const todo of storedItems[1]) {
+            if (todo.completed) {
+              storedCompleted.push(todo);
+            } else {
+              storedTodo.push(todo);
+            }
+          }
           const convertedStoredItems = {
-            pinned: storedItems[0],
-            todo: storedItems[1],
-            completed: [],
+            pinned: storedPinned,
+            todo: storedTodo,
+            completed: storedCompleted,
           };
           setTodoSections(convertedStoredItems);
         } else {
@@ -72,6 +81,7 @@ export default function TodoList() {
     >
       <TodoSection sectionKey={"pinned"} />
       <TodoSection sectionKey={"todo"} />
+      <TodoSection sectionKey={"completed"} />
     </List>
   );
 }

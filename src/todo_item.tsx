@@ -23,9 +23,26 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
   };
 
   const moveToSection = (newSection: keyof TodoSections) => {
+    if (newSection === "completed") {
+      item.completed = true;
+    } else if (newSection === "todo") {
+      item.completed = false;
+    }
     todoSections[newSection] = [...insertIntoSection(todoSections[newSection], item, compare)];
     todoSections[sectionKey].splice(idx, 1);
     setClone();
+  };
+
+  const changeState = (newState: keyof TodoSections | "unpinned") => {
+    if (sectionKey === "pinned") {
+      if (newState === "unpinned") {
+        moveToSection(item.completed ? "completed" : "todo");
+      } else {
+        toggleCompleted();
+      }
+    } else {
+      moveToSection(newState as keyof TodoSections);
+    }
   };
 
   const deleteTodo = () => {
@@ -54,13 +71,13 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
             <ActionPanel.Item
               title="Mark as Uncompleted"
               icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
-              onAction={() => toggleCompleted()}
+              onAction={() => changeState("todo")}
             />
           ) : (
             <ActionPanel.Item
               title="Mark as Completed"
               icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
-              onAction={() => toggleCompleted()}
+              onAction={() => changeState("completed")}
             />
           )}
           <ActionPanel.Item
@@ -73,14 +90,14 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
             <ActionPanel.Item
               title="Unpin Todo"
               icon={Icon.Pin}
-              onAction={() => moveToSection("todo")}
+              onAction={() => changeState("unpinned")}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           ) : (
             <ActionPanel.Item
               title="Pin Todo"
               icon={Icon.Pin}
-              onAction={() => moveToSection("pinned")}
+              onAction={() => changeState("pinned")}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           )}
