@@ -96,21 +96,21 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
           )}
           <ActionPanel.Item
             title="Delete Todo"
-            icon={Icon.Trash}
+            icon={{ source: Icon.Trash, tintColor: Color.Red }}
             onAction={() => deleteTodo()}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
           {sectionKey === "pinned" ? (
             <ActionPanel.Item
               title="Unpin Todo"
-              icon={Icon.Pin}
+              icon={{ source: Icon.Pin, tintColor: Color.Blue }}
               onAction={() => unPin()}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           ) : (
             <ActionPanel.Item
               title="Pin Todo"
-              icon={Icon.Pin}
+              icon={{ source: Icon.Pin, tintColor: Color.Blue }}
               onAction={() => pin()}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
