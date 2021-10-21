@@ -15,8 +15,8 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
     setTodoSections(_.cloneDeep(todoSections));
   };
 
-  const toggleCompleted = () => {
-    todoSections[sectionKey][idx].completed = !todoSections[sectionKey][idx].completed;
+  const toggleCompleted = (completed: boolean) => {
+    todoSections[sectionKey][idx].completed = completed;
     todoSections[sectionKey].splice(idx, 1);
     todoSections[sectionKey] = [...insertIntoSection(todoSections[sectionKey], item, compare)];
     setClone();
@@ -33,15 +33,28 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
     setClone();
   };
 
-  const changeState = (newState: keyof TodoSections | "unpinned") => {
+  const unPin = () => {
+    moveToSection(item.completed ? "completed" : "todo");
+  };
+  const pin = () => {
+    moveToSection("pinned");
+  };
+
+  // don't change section if pinned
+  const markCompleted = () => {
     if (sectionKey === "pinned") {
-      if (newState === "unpinned") {
-        moveToSection(item.completed ? "completed" : "todo");
-      } else {
-        toggleCompleted();
-      }
+      toggleCompleted(true);
     } else {
-      moveToSection(newState as keyof TodoSections);
+      moveToSection("completed");
+    }
+  };
+
+  // don't change section if pinned
+  const markTodo = () => {
+    if (sectionKey === "pinned") {
+      toggleCompleted(false);
+    } else {
+      moveToSection("todo");
     }
   };
 
@@ -71,13 +84,13 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
             <ActionPanel.Item
               title="Mark as Uncompleted"
               icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
-              onAction={() => changeState("todo")}
+              onAction={() => markTodo()}
             />
           ) : (
             <ActionPanel.Item
               title="Mark as Completed"
               icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
-              onAction={() => changeState("completed")}
+              onAction={() => markCompleted()}
             />
           )}
           <ActionPanel.Item
@@ -90,14 +103,14 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
             <ActionPanel.Item
               title="Unpin Todo"
               icon={Icon.Pin}
-              onAction={() => changeState("unpinned")}
+              onAction={() => unPin()}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           ) : (
             <ActionPanel.Item
               title="Pin Todo"
               icon={Icon.Pin}
-              onAction={() => changeState("pinned")}
+              onAction={() => pin()}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           )}
