@@ -23,3 +23,5 @@ export const todoAtom = atom(
     fs.writeFileSync(TODO_FILE, JSON.stringify(newTodo));
   }
 );
+
+export const searchModeAtom = atom(false);

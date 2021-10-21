@@ -1,17 +1,19 @@
 import { ActionPanel, clearSearchBar, environment, List, showToast, ToastStyle } from "@raycast/api";
 import { useEffect, useState } from "react";
 import fs from "fs/promises";
-import { todoAtom, TodoSections } from "./atoms";
+import { searchModeAtom, todoAtom, TodoSections } from "./atoms";
 import { useAtom } from "jotai";
 import { DEFAULT_SECTIONS, TODO_FILE } from "./config";
 import _ from "lodash";
 import { insertIntoSection, compare } from "./utils";
 import DeleteAllAction from "./delete_all";
 import TodoSection from "./todo_section";
+import SearchModeAction from "./search_mode_action";
 
 export default function TodoList() {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
-  const [searchText, setSearchText] = useState("");
+  const [newTodoText, setNewTodoText] = useState("");
+  const [searchMode, setSearchMode] = useAtom(searchModeAtom);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     (async () => {
@@ -49,7 +51,7 @@ export default function TodoList() {
   }, []);
 
   const addTodo = async () => {
-    if (searchText.length === 0) {
+    if (newTodoText.length === 0) {
       await showToast(ToastStyle.Failure, "Empty todo", "Todo items cannot be empty.");
       return;
     }
@@ -57,7 +59,7 @@ export default function TodoList() {
       ...insertIntoSection(
         todoSections.todo,
         {
-          title: searchText,
+          title: newTodoText,
           completed: false,
           timeAdded: Date.now(),
         },
@@ -69,19 +71,21 @@ export default function TodoList() {
   };
   return (
     <List
+      key={searchMode ? "search" : "nosearch"}
       isLoading={loading}
       actions={
         <ActionPanel>
-          <ActionPanel.Item title="Create Todo" onAction={() => addTodo()} />
+          {!searchMode && <ActionPanel.Item title="Create Todo" onAction={() => addTodo()} />}
+          <SearchModeAction />
           <DeleteAllAction />
         </ActionPanel>
       }
-      onSearchTextChange={(text) => setSearchText(text.trimEnd())}
-      searchBarPlaceholder="Type and hit enter to add an item to your list"
+      onSearchTextChange={searchMode ? undefined : (text: string) => setNewTodoText(text.trimEnd())}
+      searchBarPlaceholder={searchMode ? "Search todos" : "Type and hit enter to add an item to your list"}
     >
-      <TodoSection sectionKey={"pinned"} />
-      <TodoSection sectionKey={"todo"} />
-      <TodoSection sectionKey={"completed"} />
+      <TodoSection sectionKey="pinned" />
+      <TodoSection sectionKey="todo" />
+      <TodoSection sectionKey="completed" />
     </List>
   );
 }

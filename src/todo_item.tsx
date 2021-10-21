@@ -7,6 +7,7 @@ import { SECTIONS_DATA } from "./config";
 import _ from "lodash";
 import { insertIntoSection, compare } from "./utils";
 import DeleteAllAction from "./delete_all";
+import SearchModeAction from "./search_mode_action";
 
 const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number; sectionKey: keyof TodoSections }) => {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
@@ -115,6 +116,7 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
             />
           )}
           <DeleteAllAction />
+          <SearchModeAction />
         </ActionPanel>
       }
     />
