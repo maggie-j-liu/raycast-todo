@@ -1,7 +1,7 @@
 import { Action, ActionPanel, Color, Icon, List } from "@raycast/api";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import { todoAtom, TodoItem, TodoSections } from "./atoms";
+import { newTodoTextAtom, todoAtom, TodoItem, TodoSections } from "./atoms";
 import { useAtom } from "jotai";
 import { SECTIONS_DATA } from "./config";
 import _ from "lodash";
@@ -9,9 +9,11 @@ import { insertIntoSection, compare } from "./utils";
 import DeleteAllAction from "./delete_all";
 import SearchModeAction from "./search_mode_action";
 import OpenUrlAction from "./open_url_action";
+import ListActions from "./list_actions";
 
 const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number; sectionKey: keyof TodoSections }) => {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
+  const [newTodoText] = useAtom(newTodoTextAtom);
 
   const setClone = () => {
     setTodoSections(_.cloneDeep(todoSections));
@@ -81,45 +83,49 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
       }
       accessoryIcon={SECTIONS_DATA[sectionKey].accessoryIcon}
       actions={
-        <ActionPanel>
-          {item.completed ? (
+        newTodoText.length === 0 ? (
+          <ActionPanel>
+            {item.completed ? (
+              <Action
+                title="Mark as Uncompleted"
+                icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
+                onAction={() => markTodo()}
+              />
+            ) : (
+              <Action
+                title="Mark as Completed"
+                icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
+                onAction={() => markCompleted()}
+              />
+            )}
             <Action
-              title="Mark as Uncompleted"
-              icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
-              onAction={() => markTodo()}
+              title="Delete Todo"
+              icon={{ source: Icon.Trash, tintColor: Color.Red }}
+              onAction={() => deleteTodo()}
+              shortcut={{ modifiers: ["cmd"], key: "d" }}
             />
-          ) : (
-            <Action
-              title="Mark as Completed"
-              icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
-              onAction={() => markCompleted()}
-            />
-          )}
-          <Action
-            title="Delete Todo"
-            icon={{ source: Icon.Trash, tintColor: Color.Red }}
-            onAction={() => deleteTodo()}
-            shortcut={{ modifiers: ["cmd"], key: "d" }}
-          />
-          {sectionKey === "pinned" ? (
-            <Action
-              title="Unpin Todo"
-              icon={{ source: Icon.Pin, tintColor: Color.Blue }}
-              onAction={() => unPin()}
-              shortcut={{ modifiers: ["cmd"], key: "p" }}
-            />
-          ) : (
-            <Action
-              title="Pin Todo"
-              icon={{ source: Icon.Pin, tintColor: Color.Blue }}
-              onAction={() => pin()}
-              shortcut={{ modifiers: ["cmd"], key: "p" }}
-            />
-          )}
-          <OpenUrlAction title={item.title} />
-          <DeleteAllAction />
-          <SearchModeAction />
-        </ActionPanel>
+            {sectionKey === "pinned" ? (
+              <Action
+                title="Unpin Todo"
+                icon={{ source: Icon.Pin, tintColor: Color.Blue }}
+                onAction={() => unPin()}
+                shortcut={{ modifiers: ["cmd"], key: "p" }}
+              />
+            ) : (
+              <Action
+                title="Pin Todo"
+                icon={{ source: Icon.Pin, tintColor: Color.Blue }}
+                onAction={() => pin()}
+                shortcut={{ modifiers: ["cmd"], key: "p" }}
+              />
+            )}
+            <OpenUrlAction title={item.title} />
+            <DeleteAllAction />
+            <SearchModeAction />
+          </ActionPanel>
+        ) : (
+          <ListActions />
+        )
       }
     />
   );

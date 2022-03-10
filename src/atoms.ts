@@ -25,3 +25,5 @@ export const todoAtom = atom(
 );
 
 export const searchModeAtom = atom(false);
+
+export const newTodoTextAtom = atom("");
