@@ -10,10 +10,16 @@ import DeleteAllAction from "./delete_all";
 import SearchModeAction from "./search_mode_action";
 import OpenUrlAction from "./open_url_action";
 import ListActions from "./list_actions";
+import { useMemo } from "react";
+import urlRegexSafe from "url-regex-safe";
 
 const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number; sectionKey: keyof TodoSections }) => {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
   const [newTodoText] = useAtom(newTodoTextAtom);
+
+  const urls = useMemo(() => {
+    return item.title.match(urlRegexSafe());
+  }, [item.title]);
 
   const setClone = () => {
     setTodoSections(_.cloneDeep(todoSections));
@@ -119,7 +125,32 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
                 shortcut={{ modifiers: ["cmd"], key: "p" }}
               />
             )}
-            <OpenUrlAction title={item.title} />
+            {urls &&
+              urls.length > 0 &&
+              (urls.length === 1 ? (
+                <OpenUrlAction
+                  url={urls[0]}
+                  title={`Open ${urls[0]}`}
+                  shortcut={{
+                    modifiers: ["cmd"],
+                    key: "o",
+                  }}
+                />
+              ) : (
+                <ActionPanel.Submenu
+                  title="Open URL"
+                  shortcut={{
+                    modifiers: ["cmd"],
+                    key: "o",
+                  }}
+                  icon={Icon.Globe}
+                >
+                  {urls.map((url, idx) => (
+                    <OpenUrlAction key={idx} url={url} />
+                  ))}
+                </ActionPanel.Submenu>
+              ))}
+
             <DeleteAllAction />
             <SearchModeAction />
           </ActionPanel>
