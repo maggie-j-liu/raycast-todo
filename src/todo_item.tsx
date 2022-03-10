@@ -1,4 +1,4 @@
-import { ActionPanel, Color, Icon, List } from "@raycast/api";
+import { Action, ActionPanel, Color, Icon, List } from "@raycast/api";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { todoAtom, TodoItem, TodoSections } from "./atoms";
@@ -8,6 +8,7 @@ import _ from "lodash";
 import { insertIntoSection, compare } from "./utils";
 import DeleteAllAction from "./delete_all";
 import SearchModeAction from "./search_mode_action";
+import OpenUrlAction from "./open_url_action";
 
 const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number; sectionKey: keyof TodoSections }) => {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
@@ -82,39 +83,40 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
       actions={
         <ActionPanel>
           {item.completed ? (
-            <ActionPanel.Item
+            <Action
               title="Mark as Uncompleted"
               icon={{ source: Icon.XmarkCircle, tintColor: Color.Red }}
               onAction={() => markTodo()}
             />
           ) : (
-            <ActionPanel.Item
+            <Action
               title="Mark as Completed"
               icon={{ source: Icon.Checkmark, tintColor: Color.Green }}
               onAction={() => markCompleted()}
             />
           )}
-          <ActionPanel.Item
+          <Action
             title="Delete Todo"
             icon={{ source: Icon.Trash, tintColor: Color.Red }}
             onAction={() => deleteTodo()}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
           {sectionKey === "pinned" ? (
-            <ActionPanel.Item
+            <Action
               title="Unpin Todo"
               icon={{ source: Icon.Pin, tintColor: Color.Blue }}
               onAction={() => unPin()}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           ) : (
-            <ActionPanel.Item
+            <Action
               title="Pin Todo"
               icon={{ source: Icon.Pin, tintColor: Color.Blue }}
               onAction={() => pin()}
               shortcut={{ modifiers: ["cmd"], key: "p" }}
             />
           )}
+          <OpenUrlAction title={item.title} />
           <DeleteAllAction />
           <SearchModeAction />
         </ActionPanel>

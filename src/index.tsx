@@ -1,7 +1,7 @@
-import { ActionPanel, clearSearchBar, environment, List, showToast, ToastStyle } from "@raycast/api";
+import { Action, ActionPanel, clearSearchBar, environment, List, showToast, ToastStyle } from "@raycast/api";
 import { useEffect, useState } from "react";
 import fs from "fs/promises";
-import { searchModeAtom, todoAtom, TodoSections } from "./atoms";
+import { searchModeAtom, todoAtom } from "./atoms";
 import { useAtom } from "jotai";
 import { DEFAULT_SECTIONS, TODO_FILE } from "./config";
 import _ from "lodash";
@@ -13,7 +13,7 @@ import SearchModeAction from "./search_mode_action";
 export default function TodoList() {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
   const [newTodoText, setNewTodoText] = useState("");
-  const [searchMode, setSearchMode] = useAtom(searchModeAtom);
+  const [searchMode] = useAtom(searchModeAtom);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     (async () => {
@@ -75,7 +75,7 @@ export default function TodoList() {
       isLoading={loading}
       actions={
         <ActionPanel>
-          {!searchMode && <ActionPanel.Item title="Create Todo" onAction={() => addTodo()} />}
+          {!searchMode && <Action title="Create Todo" onAction={() => addTodo()} />}
           <SearchModeAction />
           <DeleteAllAction />
         </ActionPanel>
