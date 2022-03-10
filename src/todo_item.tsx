@@ -1,7 +1,15 @@
 import { Action, ActionPanel, Color, Icon, List } from "@raycast/api";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import { newTodoTextAtom, todoAtom, TodoItem, TodoSections } from "./atoms";
+import {
+  editingAtom,
+  newTodoTextAtom,
+  searchBarTextAtom,
+  searchModeAtom,
+  todoAtom,
+  TodoItem,
+  TodoSections,
+} from "./atoms";
 import { useAtom } from "jotai";
 import { SECTIONS_DATA } from "./config";
 import _ from "lodash";
@@ -16,6 +24,9 @@ import urlRegexSafe from "url-regex-safe";
 const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number; sectionKey: keyof TodoSections }) => {
   const [todoSections, setTodoSections] = useAtom(todoAtom);
   const [newTodoText] = useAtom(newTodoTextAtom);
+  const [, setSearchBarText] = useAtom(searchBarTextAtom);
+  const [editing, setEditing] = useAtom(editingAtom);
+  const [, setSearchMode] = useAtom(searchModeAtom);
 
   const urls = useMemo(() => {
     return item.title.match(urlRegexSafe());
@@ -73,6 +84,14 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
     setClone();
   };
 
+  const editTodo = () => {
+    setEditing({
+      sectionKey,
+      index: idx,
+    });
+    setSearchBarText(item.title);
+  };
+
   dayjs.extend(customParseFormat);
   const datePart = dayjs(item.timeAdded).format("MMM D");
   const nowDatePart = dayjs(Date.now()).format("MMM D");
@@ -89,7 +108,7 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
       }
       accessoryIcon={SECTIONS_DATA[sectionKey].accessoryIcon}
       actions={
-        newTodoText.length === 0 ? (
+        newTodoText.length === 0 && !editing ? (
           <ActionPanel>
             {item.completed ? (
               <Action
@@ -104,6 +123,15 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
                 onAction={() => markCompleted()}
               />
             )}
+            <Action
+              title="Edit Todo"
+              icon={{ source: Icon.Pencil, tintColor: Color.Orange }}
+              onAction={() => {
+                setSearchMode(false);
+                editTodo();
+              }}
+              shortcut={{ modifiers: ["cmd"], key: "e" }}
+            />
             <Action
               title="Delete Todo"
               icon={{ source: Icon.Trash, tintColor: Color.Red }}
@@ -150,7 +178,6 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
                   ))}
                 </ActionPanel.Submenu>
               ))}
-
             <DeleteAllAction />
             <SearchModeAction />
           </ActionPanel>

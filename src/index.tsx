@@ -1,7 +1,7 @@
 import { environment, List } from "@raycast/api";
 import { useEffect, useState } from "react";
 import fs from "fs/promises";
-import { newTodoTextAtom, searchModeAtom, todoAtom } from "./atoms";
+import { editingAtom, searchBarTextAtom, searchModeAtom, todoAtom } from "./atoms";
 import { useAtom } from "jotai";
 import { DEFAULT_SECTIONS, TODO_FILE } from "./config";
 import TodoSection from "./todo_section";
@@ -9,9 +9,10 @@ import ListActions from "./list_actions";
 
 export default function TodoList() {
   const [, setTodoSections] = useAtom(todoAtom);
-  const [, setNewTodoText] = useAtom(newTodoTextAtom);
   const [searchMode] = useAtom(searchModeAtom);
   const [loading, setLoading] = useState(true);
+  const [searchBarText, setSearchBarText] = useAtom(searchBarTextAtom);
+  const [editing] = useAtom(editingAtom);
   useEffect(() => {
     (async () => {
       try {
@@ -49,10 +50,13 @@ export default function TodoList() {
 
   return (
     <List
+      navigationTitle={`Manage Todo List${editing !== false ? " • Editing" : searchMode ? " • Searching" : ""}`}
       key={searchMode ? "search" : "nosearch"}
       isLoading={loading}
       actions={<ListActions />}
-      onSearchTextChange={searchMode ? undefined : (text: string) => setNewTodoText(text.trimEnd())}
+      enableFiltering={searchMode}
+      searchText={searchBarText}
+      onSearchTextChange={(text: string) => setSearchBarText(text)}
       searchBarPlaceholder={searchMode ? "Search todos" : "Type and hit enter to add an item to your list"}
     >
       <TodoSection sectionKey="pinned" />
