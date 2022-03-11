@@ -26,7 +26,7 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
   const [newTodoText] = useAtom(newTodoTextAtom);
   const [, setSearchBarText] = useAtom(searchBarTextAtom);
   const [editing, setEditing] = useAtom(editingAtom);
-  const [, setSearchMode] = useAtom(searchModeAtom);
+  const [searchMode, setSearchMode] = useAtom(searchModeAtom);
 
   const urls = useMemo(() => {
     return item.title.match(urlRegexSafe());
@@ -108,7 +108,7 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
       }
       accessoryIcon={SECTIONS_DATA[sectionKey].accessoryIcon}
       actions={
-        newTodoText.length === 0 && !editing ? (
+        searchMode || (newTodoText.length === 0 && !editing) ? (
           <ActionPanel>
             {item.completed ? (
               <Action
