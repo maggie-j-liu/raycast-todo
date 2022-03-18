@@ -3,7 +3,12 @@ import { URL } from "url";
 
 const OpenUrlAction = ({ url, shortcut, title }: { url: string; shortcut?: Keyboard.Shortcut; title?: string }) => {
   const resolvedURL = url.includes(":") ? url : `http://${url}`;
-  const hostname = new URL(resolvedURL).hostname;
+  let hostname;
+  try {
+    hostname = new URL(url).hostname;
+  } catch (e) {
+    return null;
+  }
   const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${hostname}`;
   return (
     <>
