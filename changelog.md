@@ -1,5 +1,7 @@
 # Todo List Changelog
 
+## [Added delete completed items action] - 2022-12-13
+
 ## [Fix Handling URLs Without a Scheme] - 2022-03-17
 
 Previously, URLs without a scheme would crash the extension -- these are now handled by adding the `https` scheme if there is no scheme.

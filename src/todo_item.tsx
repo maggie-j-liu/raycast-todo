@@ -14,6 +14,7 @@ import { useAtom } from "jotai";
 import { SECTIONS_DATA } from "./config";
 import _ from "lodash";
 import { insertIntoSection, compare } from "./utils";
+import DeleteCompletedAction from "./delete_completed";
 import DeleteAllAction from "./delete_all";
 import SearchModeAction from "./search_mode_action";
 import OpenUrlAction from "./open_url_action";
@@ -178,6 +179,7 @@ const SingleTodoItem = ({ item, idx, sectionKey }: { item: TodoItem; idx: number
                   ))}
                 </ActionPanel.Submenu>
               ))}
+            <DeleteCompletedAction />
             <DeleteAllAction />
             <SearchModeAction />
           </ActionPanel>

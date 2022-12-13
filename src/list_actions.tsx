@@ -2,6 +2,7 @@ import { Action, ActionPanel, clearSearchBar, Color, Icon, showToast, Toast } fr
 import { useAtom } from "jotai";
 import _ from "lodash";
 import { editingAtom, newTodoTextAtom, searchBarTextAtom, searchModeAtom, todoAtom } from "./atoms";
+import DeleteCompletedAction from "./delete_completed";
 import DeleteAllAction from "./delete_all";
 import SearchModeAction from "./search_mode_action";
 import { compare, insertIntoSection } from "./utils";
@@ -69,6 +70,7 @@ const ListActions = () => {
     <ActionPanel>
       {!searchMode && <Action title="Create Todo" onAction={() => addTodo()} icon={Icon.Plus} />}
       <SearchModeAction />
+      <DeleteCompletedAction />
       <DeleteAllAction />
     </ActionPanel>
   );
